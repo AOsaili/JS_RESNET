@@ -13,3 +13,7 @@ If you get a security error:
 ```bash
 Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope Process
 ```
+### 2. Start the app
+```bash
+python .\app.py
+```
