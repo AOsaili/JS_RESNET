@@ -1,4 +1,4 @@
-# Real-Time Object Detection Web Application
+# JavaScribt image recognition using ResNet
 
 A Flask web application that performs real-time object detection using ResNet50 and device camera.
 
