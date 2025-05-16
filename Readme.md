@@ -1,0 +1,15 @@
+# Real-Time Object Detection Web Application
+
+A Flask web application that performs real-time object detection using ResNet50 and device camera.
+
+## Setup Instructions
+
+### 1. Activate Virtual Environment
+
+```bash
+.\myenv\Scripts\activate
+```
+If you get a security error:
+```bash
+Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope Process
+```

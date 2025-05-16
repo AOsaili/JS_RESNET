@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Object detection</title>
+  <style>
+    #result {
+      font-size: 1.2em;
+      margin-top: 10px;
+      font-weight: bold;
+    }
+    #upload {
+      color: #666;
+      font-style: italic;
+      margin: 5px 0;
+    }
+  </style>
+</head>
+<body>
+  <center>
+    <h2>Object detection</h2>
+    <button id="cameraSwitch">Turn Camera On</button>
+    <button id="captureButton" disabled>Take Photo</button>
+    <video id="video" width="320" height="240" autoplay style="display:none;"></video>
+    <canvas id="canvas" width="320" height="240" style="display:none;"></canvas>
+    <p id="upload"></p>
+    <picture id="pic" width="320" height="200">
+    </picture>
+    <p id="result"></p>
+  </center>
+
+  <script>
+    const camBTN = document.getElementById('cameraSwitch');
+    const capBTN = document.getElementById('captureButton');
+    const video = document.getElementById('video');
+    const canvas = document.getElementById('canvas');
+    const context = canvas.getContext('2d');
+    const upSts = document.getElementById('upload');
+    const resultEl = document.getElementById('result');
+
+    let stream = null;
+    let cameraOn = false;
+
+    camBTN.addEventListener('click', async () => {
+      if (!cameraOn) {
+        try {
+          stream = await navigator.mediaDevices.getUserMedia({ 
+            video: { width: 320, height: 240 }
+          });
+          video.srcObject = stream;
+          video.style.display = 'block';
+          capBTN.disabled = false;
+          camBTN.textContent = 'Turn Camera Off';
+          cameraOn = true;
+          upSts.textContent = 'ready';
+        } catch (err) {
+          console.error('Error', err);
+          upSts.textContent = 'Error';
+        }
+      } else {
+        stopCamera();
+      }
+    });
+
+    capBTN.addEventListener('click', async () => {
+      if (!cameraOn) return;
+      
+      try {
+        upSts.textContent = "Processing";
+        resultEl.textContent = "";
+        
+        // Capture image
+        context.drawImage(video, 0, 0, canvas.width, canvas.height);
+        const blob = await new Promise(resolve => 
+          canvas.toBlob(resolve, 'image/jpeg', 0.8)
+        );
+        
+        // Display captured image
+        const dataURL = canvas.toDataURL('image/jpeg');
+        document.getElementById('pic').innerHTML = `<img src="${dataURL}" width="320" height="240">`;
+        
+        // Send to server for detection
+        const formData = new FormData();
+        formData.append('image', blob, 'object.jpg');
+        
+        const response = await fetch('/upload', {
+          method: 'POST',
+          body: formData
+        });
+        
+        const data = await response.json();
+        
+        if (data.error) {
+          upSts.textContent = "Error: " + data.error;
+          resultEl.textContent = "";
+        } else {
+          upSts.textContent = "Detected";
+          // Display the object name below the image
+          resultEl.textContent = `Object is: ${data.top_prediction.label}`;
+          
+          // Optional: Log all predictions to console
+          console.log("All predictions:", data.all_predictions);
+        }
+      } catch (error) {
+        console.error('Detection failed:', error);
+        upSts.textContent = "Detection failed";
+        resultEl.textContent = "Error: " + error.message;
+      }
+    });
+
+    function stopCamera() {
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+      }
+      video.style.display = 'none';
+      capBTN.disabled = true;
+      camBTN.textContent = 'Turn Camera On';
+      cameraOn = false;
+      upSts.textContent = 'Camera is off';
+      resultEl.textContent = "";
+    }
+  </script>
+</body>
+</html>
